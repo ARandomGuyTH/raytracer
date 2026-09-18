@@ -6,7 +6,7 @@ void renderQuad();
 struct {
     int width;
     int height;
-} aspect = {800, 600};
+} aspect = {800, 800};
 
 struct GPUSphere {
      glm::vec4 centerAndRadius; 
@@ -50,8 +50,9 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
 //resizes the viewport to the width and height
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
+    aspect.width = width;
+    aspect.height = height;
 
-    glfwGetWindowSize(window, &(aspect.width), &(aspect.height));
 }
 
 void calculateDelta() {
