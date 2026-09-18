@@ -8,10 +8,17 @@ struct {
     int height;
 } aspect = {800, 800};
 
+//sphere data
 struct GPUSphere {
      glm::vec4 centerAndRadius; 
      glm::vec4 colour; 
     };
+
+struct SphereBlockData {
+    GPUSphere spheres[64];
+    int numSpheres;
+    int _pad[3];
+};
 
 //camera
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
@@ -27,8 +34,7 @@ void mouse_callback(GLFWwindow* window, double xposin, double yposin) {
     float xpos = static_cast<float>(xposin);
     float ypos = static_cast<float>(yposin);
 
-    if (firstMouse)
-    {
+    if (firstMouse) {
         lastX = xpos;
         lastY = ypos;
         firstMouse = false;
@@ -75,9 +81,31 @@ void processInput(GLFWwindow *window) {
         camera.ProcessKeyboard(RIGHT, deltaTime);
 }
 
+void updateSphereData(SphereBlockData* sphereData) {
+    sphereData->numSpheres = 0;
 
-int main(int argc, char* argv[])
-{
+    sphereData->spheres[0].centerAndRadius = glm::vec4(0, -1, 3, 2);
+    sphereData->spheres[0].colour = glm::vec4(1, 0, 0, 1);
+    sphereData->numSpheres += 1;
+
+
+    sphereData->spheres[1].centerAndRadius = glm::vec4(2, 0, 4, 2);
+    sphereData->spheres[1].colour = glm::vec4(0, 0, 1, 1);
+    sphereData->numSpheres += 1;
+
+    sphereData->spheres[2].centerAndRadius = glm::vec4(0, -100.5, 1, 100);
+    sphereData->spheres[2].colour = glm::vec4(0.5, 1, 0.5, 1);
+    sphereData->numSpheres += 1;
+
+    sphereData->spheres[3].centerAndRadius = glm::vec4(-2, 0, 4, 2);
+    sphereData->spheres[3].colour = glm::vec4(0, 1, 0, 1);
+    sphereData->numSpheres += 1;
+
+
+}
+
+
+int main(int argc, char* argv[]) {
 	// initialize and configure glfw
 	// ------------------------------
 	glfwInit();
@@ -87,7 +115,7 @@ int main(int argc, char* argv[])
 
 	// glfw window creation
 	// --------------------
-	GLFWwindow* window = glfwCreateWindow(aspect.width, aspect.height, "LearnOpenGL", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(aspect.width, aspect.height, "raytracer", NULL, NULL);
 	if (window == NULL) {
 		std::cout << "Failed to create GLFW window" << std::endl;
 		glfwTerminate();
@@ -105,11 +133,17 @@ int main(int argc, char* argv[])
 
 	// load all OpenGL function pointers
 	// ---------------------------------------
-	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-	{
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
 		std::cout << "Failed to initialize GLAD" << std::endl;
 		return -1;
 	}
+
+    //create UBOSpheres to send sphere data to GPU
+    unsigned int UBOSpheres;
+    glGenBuffers(1, &UBOSpheres);
+    glBindBuffer(GL_UNIFORM_BUFFER, UBOSpheres);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(SphereBlockData), NULL, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 	// build and compile shaders
 	// -------------------------
@@ -132,6 +166,17 @@ int main(int argc, char* argv[])
 
         //pass in aspect ratio
         shaders.setVec2("resolution", glm::vec2(aspect.width, aspect.height));
+
+        //update and send sphereBlock data to shader
+        SphereBlockData sphereData{};
+        updateSphereData(&sphereData);
+
+        glBindBuffer(GL_UNIFORM_BUFFER, UBOSpheres);
+        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(SphereBlockData), &sphereData); //bind data to UBO
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+        const GLuint SPHERE_BLOCK_BINDING = 0;
+        glBindBufferBase(GL_UNIFORM_BUFFER, SPHERE_BLOCK_BINDING, UBOSpheres);
 
         // render image to quad
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
