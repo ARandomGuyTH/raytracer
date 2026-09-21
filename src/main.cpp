@@ -9,9 +9,10 @@ struct {
 } aspect = {800, 800};
 
 //sphere data
-struct GPUSphere { //32
+struct GPUSphere {
     glm::vec4 centerAndRadius; 
-    glm::vec4 colour; 
+    glm::vec4 colour;
+    glm::vec4 data; //x => specular.
 };
 
 struct SphereBlockData {
@@ -33,7 +34,7 @@ struct SphereBlockData {
 
 struct GPULight { //20
     glm::vec4 positionIntensity; //if ambient arbitrary, point -> position, directional -> direction. xyz => pos, w => intensity
-    glm::vec4 type; // x => type
+    glm::vec4 type; // x => type;
 };
 
 struct LightBlockData {
@@ -106,20 +107,24 @@ void processInput(GLFWwindow *window) {
 void updateSphereData(SphereBlockData* sphereData) {
     sphereData->numSpheres = 0;
 
-    sphereData->spheres[0].centerAndRadius = glm::vec4(0, -1, 3, 2);
+    sphereData->spheres[0].centerAndRadius = glm::vec4(0, -1, 3, 1);
     sphereData->spheres[0].colour = glm::vec4(1, 0, 0, 1);
+    sphereData->spheres[0].data= glm::vec4(500, 0, 0, 0); 
     sphereData->numSpheres += 1;
 
-    sphereData->spheres[1].centerAndRadius = glm::vec4(2, 0, 4, 2);
+    sphereData->spheres[1].centerAndRadius = glm::vec4(2, 0, 4, 1);
     sphereData->spheres[1].colour = glm::vec4(0, 0, 1, 1);
+    sphereData->spheres[1].data= glm::vec4(500, 0, 0, 0);
     sphereData->numSpheres += 1;
 
-    sphereData->spheres[2].centerAndRadius = glm::vec4(0, -100.5, 1, 100);
-    sphereData->spheres[2].colour = glm::vec4(0.5, 1, 0.5, 1);
+    sphereData->spheres[2].centerAndRadius = glm::vec4(0, -5001, 0, 5000);
+    sphereData->spheres[2].colour = glm::vec4(1, 1, 0, 1);
+    sphereData->spheres[2].data= glm::vec4(1000, 0, 0, 0);
     sphereData->numSpheres += 1;
 
-    sphereData->spheres[3].centerAndRadius = glm::vec4(-2, 0, 4, 2);
+    sphereData->spheres[3].centerAndRadius = glm::vec4(-2, 0, 4, 1);
     sphereData->spheres[3].colour = glm::vec4(0, 1, 0, 1);
+    sphereData->spheres[3].data= glm::vec4(10, 0, 0, 0);
     sphereData->numSpheres += 1;
 }
 

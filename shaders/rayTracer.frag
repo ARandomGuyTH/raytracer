@@ -19,6 +19,7 @@ struct Light {
 struct Sphere {
     vec4 centerRadius; // xyz centre, w radius
     vec4 colour;           // xyz color, w unused
+    vec4 data; //x => specular.
 };
 
 layout(std140, binding = 0) uniform sphereBlock {
@@ -35,7 +36,8 @@ uniform vec2 resolution;
 out vec4 FragColor;
 
 //returns the cumulative light intensity from posiiton P and normal N
-float computeLighting(vec3 P, vec3 N) {
+//and object to camera vector V, specular  
+float computeLighting(vec3 P, vec3 N, vec3 V, float s) {
     float cumIntensity = 0.0;
     float N_dot_L;
 
@@ -53,10 +55,20 @@ float computeLighting(vec3 P, vec3 N) {
             L = posDir; //get light vector
         }
 
+        //Diffuse
         N_dot_L = dot(N, L);
         if (N_dot_L > 0) {
             //calc cosine of angle and multiply by light intensity
             cumIntensity += intensity * N_dot_L / (length(N) * length(L));
+        }
+
+        //specular
+        if (s != 1) { //if non-matte
+            vec3 R = 2 * N * dot(N, L) - L;
+            float R_dot_V = dot(R,V);
+            if (R_dot_V > 0) {
+                cumIntensity += intensity * pow(R_dot_V/(length(R) * length(V)), s);
+            }
         }
     }
     return cumIntensity;
@@ -121,7 +133,7 @@ vec4 ray_color(Ray r) {
         vec3 pos = at(r, closest_t);
         vec3 sphereCentre = vec3(closest_sphere.centerRadius.x, closest_sphere.centerRadius.y, closest_sphere.centerRadius.z);
         vec3 normal = normalize(pos - sphereCentre);
-        return closest_sphere.colour * computeLighting(pos, normal);
+        return closest_sphere.colour * computeLighting(pos, normal, -pos, closest_sphere.data.x);
     }
 
     float a = 0.5 * normalize(r.dir).y + 1.0;
