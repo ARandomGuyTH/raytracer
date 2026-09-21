@@ -9,7 +9,7 @@ The rays check if they collide with a sphere and if so return the colour of the 
 
 ## How to use
 ### LINUX
-Compile your own glfw library files (i.e - libglfw.so, libglfw.so.3, libglfw.so.3.5) and add them to the the lib folder in dependencies, then run make all
+Compile your own glfw library files (i.e - libglfw.so, libglfw.so.3, libglfw.so.3.5) and add them to the the lib directory in dependencies, then run make all
 
 ## To Add
   -Lighting

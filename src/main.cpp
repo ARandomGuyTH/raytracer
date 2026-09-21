@@ -9,14 +9,36 @@ struct {
 } aspect = {800, 800};
 
 //sphere data
-struct GPUSphere {
-     glm::vec4 centerAndRadius; 
-     glm::vec4 colour; 
-    };
+struct GPUSphere { //32
+    glm::vec4 centerAndRadius; 
+    glm::vec4 colour; 
+};
 
 struct SphereBlockData {
     GPUSphere spheres[64];
     int numSpheres;
+    int _pad[3];
+};
+
+// //light data
+// enum LightType {
+//     AMBIENT,
+//     POINT,
+//     DIRECTIONAL
+// };
+
+#define AMBIENT 0
+#define POINT 1
+#define DIRECTIONAL 2
+
+struct GPULight { //20
+    glm::vec4 positionIntensity; //if ambient arbitrary, point -> position, directional -> direction. xyz => pos, w => intensity
+    glm::vec4 type; // x => type
+};
+
+struct LightBlockData {
+    GPULight lights[64];
+    int numLights;
     int _pad[3];
 };
 
@@ -88,7 +110,6 @@ void updateSphereData(SphereBlockData* sphereData) {
     sphereData->spheres[0].colour = glm::vec4(1, 0, 0, 1);
     sphereData->numSpheres += 1;
 
-
     sphereData->spheres[1].centerAndRadius = glm::vec4(2, 0, 4, 2);
     sphereData->spheres[1].colour = glm::vec4(0, 0, 1, 1);
     sphereData->numSpheres += 1;
@@ -100,10 +121,23 @@ void updateSphereData(SphereBlockData* sphereData) {
     sphereData->spheres[3].centerAndRadius = glm::vec4(-2, 0, 4, 2);
     sphereData->spheres[3].colour = glm::vec4(0, 1, 0, 1);
     sphereData->numSpheres += 1;
-
-
 }
 
+void updateLightData(LightBlockData* lightData) {
+    lightData->numLights = 0;
+
+    lightData->lights[0].type = glm::vec4(AMBIENT, 0, 0, 0);
+    lightData->lights[0].positionIntensity = glm::vec4(0, 0, 0, 0.2);
+    lightData->numLights += 1;
+
+    lightData->lights[1].type = glm::vec4(POINT, 0, 0, 0);
+    lightData->lights[1].positionIntensity = glm::vec4(2, 1, 0, 0.6);
+    lightData->numLights += 1;
+
+    lightData->lights[2].type = glm::vec4(DIRECTIONAL, 0, 0, 0);
+    lightData->lights[2].positionIntensity = glm::vec4(1, 4, 4, 0.2);
+    lightData->numLights += 1;
+}
 
 int main(int argc, char* argv[]) {
 	// initialize and configure glfw
@@ -145,6 +179,13 @@ int main(int argc, char* argv[]) {
     glBufferData(GL_UNIFORM_BUFFER, sizeof(SphereBlockData), NULL, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
+    //create UBOLights to send light data to GPU
+    unsigned int UBOLights;
+    glGenBuffers(1, &UBOLights);
+    glBindBuffer(GL_UNIFORM_BUFFER, UBOLights);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(LightBlockData), NULL, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
 	// build and compile shaders
 	// -------------------------
 	Shader shaders("shaders/screenQuad.vert", "shaders/rayTracer.frag");
@@ -177,6 +218,17 @@ int main(int argc, char* argv[]) {
 
         const GLuint SPHERE_BLOCK_BINDING = 0;
         glBindBufferBase(GL_UNIFORM_BUFFER, SPHERE_BLOCK_BINDING, UBOSpheres);
+
+        //update and send lightBlock data to shader
+        LightBlockData lightData{};
+        updateLightData(&lightData);
+
+        glBindBuffer(GL_UNIFORM_BUFFER, UBOLights);
+        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(LightBlockData), &lightData); //bind data to UBO
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+        const GLuint LIGHT_BLOCK_BINDING = 1;
+        glBindBufferBase(GL_UNIFORM_BUFFER, LIGHT_BLOCK_BINDING, UBOLights);
 
         // render image to quad
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

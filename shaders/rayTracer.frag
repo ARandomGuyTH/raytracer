@@ -1,13 +1,24 @@
 #version 430 core
 
-struct Sphere {
-    vec4 centerRadius; // xyz centre, w radius
-    vec4 colour;           // xyz color, w unused
-};
-
 struct Ray {
     vec3 origin;
     vec3 dir;
+};
+
+//light data
+#define AMBIENT 0
+#define POINT 1
+#define DIRECTIONAL 2
+
+struct Light {
+    vec4 positionIntensity;
+    vec4 type;
+};
+
+//sphere data
+struct Sphere {
+    vec4 centerRadius; // xyz centre, w radius
+    vec4 colour;           // xyz color, w unused
 };
 
 layout(std140, binding = 0) uniform sphereBlock {
@@ -15,8 +26,41 @@ layout(std140, binding = 0) uniform sphereBlock {
     int numSpheres;
 };
 
+layout(std140, binding = 1) uniform lightBlock {
+    Light lights[64];
+    int numLights;
+};
+
 uniform vec2 resolution;
 out vec4 FragColor;
+
+//returns the cumulative light intensity from posiiton P and normal N
+float computeLighting(vec3 P, vec3 N) {
+    float cumIntensity = 0.0;
+    float N_dot_L;
+
+    for (int i=0; i <= numLights; i++) {
+        float type = lights[i].type.x;
+        vec3 posDir = vec3(lights[i].positionIntensity.x, lights[i].positionIntensity.y, lights[i].positionIntensity.z);
+        float intensity = lights[i].positionIntensity.w;
+
+        vec3 L = vec3(0, 0, 0);
+        if (type == AMBIENT) {
+            cumIntensity += intensity; //ambient light even intensity everywhere
+        } else if (type == POINT) {
+            L = posDir - P; // light vector is described by distance from position
+        } else {
+            L = posDir; //get light vector
+        }
+
+        N_dot_L = dot(N, L);
+        if (N_dot_L > 0) {
+            //calc cosine of angle and multiply by light intensity
+            cumIntensity += intensity * N_dot_L / (length(N) * length(L));
+        }
+    }
+    return cumIntensity;
+}
 
 //determines whether ray hits inside or outside a surface
 //returns true for outside, false for inside
@@ -35,7 +79,6 @@ vec4 visualiseUniform(Sphere sphere, Ray r, float t) {
     vec3 sphereCentre = vec3(sphere.centerRadius.x, sphere.centerRadius.y, sphere.centerRadius.z);
     vec3 normal = normalize(at(r, t) - sphereCentre);
     return 0.5 * vec4(normal.x + 1, normal.y + 1, normal.z + 1, 2);
-
 }
 
 //returns the 't' value where the ray hits a sphere
@@ -75,13 +118,14 @@ vec4 ray_color(Ray r) {
     }
 
     if (closest_t > 0) {
+        vec3 pos = at(r, closest_t);
         vec3 sphereCentre = vec3(closest_sphere.centerRadius.x, closest_sphere.centerRadius.y, closest_sphere.centerRadius.z);
-        vec3 normal = normalize(at(r, closest_t) - sphereCentre);
-        return closest_sphere.colour;
+        vec3 normal = normalize(pos - sphereCentre);
+        return closest_sphere.colour * computeLighting(pos, normal);
     }
 
     float a = 0.5 * normalize(r.dir).y + 1.0;
-    return vec4((1.0-a)*vec3(1.0, 1.0, 1.0) + a*vec3(0.5, 0.7, 1.0), 1.0);
+    return vec4((1.0-a)*vec3(1.0, 1.0, 1.0) + a*vec3(0.5, 0.7, 1.0), 1.0); //background colour
 
 }
 
