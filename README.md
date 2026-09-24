@@ -22,7 +22,9 @@ Mouse => rotate camera
 
 ## How to use
 ### LINUX
-Compile your own glfw library files (i.e - libglfw.so, libglfw.so.3, libglfw.so.3.5) and add them to the the lib directory in dependencies, then run make all
+Compile your own glfw library files (i.e - libglfw.so, libglfw.so.3, libglfw.so.3.5) and add them to the the lib directory in dependencies  
+Add out and build folders to the directory  
+run make all  
 
 ## To Add
   -Support for other shapes then spheres  
