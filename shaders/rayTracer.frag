@@ -35,6 +35,8 @@ layout(std140, binding = 1) uniform lightBlock {
 uniform vec2 resolution;
 out vec4 FragColor;
 
+vec2 closest_intersection(Ray r, float t_min, float t_max);
+
 //returns the cumulative light intensity from posiiton P and normal N
 //and object to camera vector V, specular  
 float computeLighting(vec3 P, vec3 N, vec3 V, float s) {
@@ -54,6 +56,16 @@ float computeLighting(vec3 P, vec3 N, vec3 V, float s) {
         } else {
             L = posDir; //get light vector
         }
+
+        // Shadow check
+        Ray shadow_ray = Ray(P, L);
+        vec2 closest_values = closest_intersection(shadow_ray, 0.001, 0xFFFF);
+        Sphere shadow_sphere = spheres[int(closest_values.x)];
+        float shadow_t = closest_values.y;
+
+        if (shadow_t >= 0) {
+                continue;
+            }
 
         //Diffuse
         N_dot_L = dot(N, L);
@@ -108,9 +120,11 @@ float hit_sphere(Ray r, vec3 centre, float radius) {
     return -1;
 }
 
-vec4 ray_color(Ray r) {
+
+//given a ray r, returns the closest intersection that r makes to a sphere from t_min to t_max
+vec2 closest_intersection(Ray r, float t_min, float t_max) {
     float closest_t = -1;
-    Sphere closest_sphere = spheres[0];
+    int closest_sphere = 0;
     float t;
 
     for (int i=0; i <= numSpheres; i++) {
@@ -122,18 +136,26 @@ vec4 ray_color(Ray r) {
 
         t = hit_sphere(r, centre, radius);
 
-        if ((t < closest_t || closest_t == -1) && t > 0) {
+        if ((t < closest_t || closest_t == -1) &&  t < t_max && t > t_min){
             closest_t = t;
-            closest_sphere = spheres[i];
-
+            closest_sphere = i;
         }
     }
+
+    return vec2(closest_sphere, closest_t);
+
+}
+
+vec4 ray_color(Ray r) {
+    vec2 closest_values = closest_intersection(r, 0, 0xFFFF);
+    float closest_t = closest_values.y;
+    Sphere closest_sphere = spheres[int(closest_values.x)];
 
     if (closest_t > 0) {
         vec3 pos = at(r, closest_t);
         vec3 sphereCentre = vec3(closest_sphere.centerRadius.x, closest_sphere.centerRadius.y, closest_sphere.centerRadius.z);
         vec3 normal = normalize(pos - sphereCentre);
-        return closest_sphere.colour * computeLighting(pos, normal, -pos, closest_sphere.data.x);
+        return closest_sphere.colour * computeLighting(pos, normal, -r.dir, closest_sphere.data.x);
     }
 
     float a = 0.5 * normalize(r.dir).y + 1.0;
