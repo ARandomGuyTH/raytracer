@@ -1,14 +1,17 @@
 # RAYTRACING RENDERER
 ## How it works
-GLFW is used to create a window cross-platform
-Shaders loaded and compiled using openGL
-Uniforms such as sphere data and resolution are sent to the GPU every frame
-Vertex shader draws a quad every frame that covers the whole screen so the image is displayed properly
-Fragment shader sends rays through every pixel in the viewport
-The rays check if they collide with a sphere and if so return the colour of the sphere
+GLFW is used to create a window cross-platform\n
+Shaders loaded and compiled using openGL\n
+Uniforms such as sphere data and resolution are sent to the GPU every frame\n
+Vertex shader draws a quad every frame that covers the whole screen so the image is displayed properly\n
+Fragment shader sends rays through every pixel in the viewport\n
+The rays check if they collide with a sphere and if so calculates the lighting of that sphere\n
+We then check if any Spheres are blocking the light, if so resulting in a shadow\n
+Finally if the sphere is not completely matte we iteratively reflect the ray off the sphere accumulating light at each collision\n
+
 
 ## Controls
-WASD => move camera
+WASD => move camera\n
 Mouse => rotate camera
 
 ## Demo
@@ -22,7 +25,6 @@ Mouse => rotate camera
 Compile your own glfw library files (i.e - libglfw.so, libglfw.so.3, libglfw.so.3.5) and add them to the the lib directory in dependencies, then run make all
 
 ## To Add
-  -Lighting
-  -Support for other shapes then spheres
-  -Different roughness
-  -Allowing for textures
+  -Support for other shapes then spheres\n
+  -Allowing for textures\n
+  -Optimisations
