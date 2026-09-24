@@ -36,6 +36,12 @@ uniform vec2 resolution;
 out vec4 FragColor;
 
 vec2 closest_intersection(Ray r, float t_min, float t_max);
+vec4 trace_ray(Ray r, float t_min, float t_max, int recursionDept);
+
+//returns vec3 ray direction given a ray direction R and a normal N
+vec3 ReflectRay(vec3 R, vec3 N) {
+    return 2 * N * dot(N, R) - R;
+}
 
 //returns the cumulative light intensity from posiiton P and normal N
 //and object to camera vector V, specular  
@@ -76,7 +82,7 @@ float computeLighting(vec3 P, vec3 N, vec3 V, float s) {
 
         //specular
         if (s != 1) { //if non-matte
-            vec3 R = 2 * N * dot(N, L) - L;
+            vec3 R = ReflectRay(L, N);
             float R_dot_V = dot(R,V);
             if (R_dot_V > 0) {
                 cumIntensity += intensity * pow(R_dot_V/(length(R) * length(V)), s);
@@ -146,20 +152,42 @@ vec2 closest_intersection(Ray r, float t_min, float t_max) {
 
 }
 
-vec4 ray_color(Ray r) {
-    vec2 closest_values = closest_intersection(r, 0, 0xFFFF);
-    float closest_t = closest_values.y;
-    Sphere closest_sphere = spheres[int(closest_values.x)];
+vec4 trace_ray(Ray r, float t_min, float t_max, int recursionDepth) {
+    vec4 output_colour = vec4(0,0,0,0);
+    float accCoef = 1.0; //accumulation coefficient
 
-    if (closest_t > 0) {
+    for (int depth=0; depth <= recursionDepth; depth++) {
+        vec2 closest_values = closest_intersection(r, t_min, t_max);
+        float closest_t = closest_values.y;
+        Sphere closest_sphere = spheres[int(closest_values.x)];
+
+        if (closest_t <= 0) { //if no sphere hit
+            float a = 0.5 * normalize(r.dir).y + 1.0;
+            vec4 background = vec4((1.0-a)*vec3(1.0, 1.0, 1.0) + a*vec3(0.5, 0.7, 1.0), 1.0); //return background colour
+            background = vec4(0,0,0,1);
+            return output_colour + accCoef * background;
+        }
+
         vec3 pos = at(r, closest_t);
         vec3 sphereCentre = vec3(closest_sphere.centerRadius.x, closest_sphere.centerRadius.y, closest_sphere.centerRadius.z);
         vec3 normal = normalize(pos - sphereCentre);
-        return closest_sphere.colour * computeLighting(pos, normal, -r.dir, closest_sphere.data.x);
-    }
+        vec4 local_colour = closest_sphere.colour * computeLighting(pos, normal, -r.dir, closest_sphere.data.x);
 
-    float a = 0.5 * normalize(r.dir).y + 1.0;
-    return vec4((1.0-a)*vec3(1.0, 1.0, 1.0) + a*vec3(0.5, 0.7, 1.0), 1.0); //background colour
+
+        // If the object is not reflective, we're done
+        float reflectivity = closest_sphere.data.y;
+        if (reflectivity <= 0) {
+            return output_colour + accCoef * local_colour;
+        }
+
+        // Compute the reflected ray
+        vec3 R_dir = ReflectRay(-r.dir, normal); //get reflected ray dir
+        r = Ray(pos, R_dir);
+        output_colour += accCoef * local_colour * (1 - reflectivity);
+
+        accCoef *= reflectivity;
+    }
+    return output_colour;
 
 }
 
@@ -170,6 +198,5 @@ void main() {
     vec3 cameraForward = normalize(vec3(uv, 1.0)); // simple fixed-forward camera
 
     Ray r = Ray(vec3(0,0,0), cameraForward);
-    FragColor = ray_color(r);
-
+    FragColor = trace_ray(r, 0.001, 0xFFFF, 100);
 }

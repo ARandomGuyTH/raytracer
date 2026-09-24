@@ -12,7 +12,7 @@ struct {
 struct GPUSphere {
     glm::vec4 centerAndRadius; 
     glm::vec4 colour;
-    glm::vec4 data; //x => specular.
+    glm::vec4 data; //x => specular [0, inf]; y => reflectivity [0,1];
 };
 
 struct SphereBlockData {
@@ -109,22 +109,22 @@ void updateSphereData(SphereBlockData* sphereData) {
 
     sphereData->spheres[0].centerAndRadius = glm::vec4(0, -1, 3, 1);
     sphereData->spheres[0].colour = glm::vec4(1, 0, 0, 1);
-    sphereData->spheres[0].data= glm::vec4(500, 0, 0, 0); 
+    sphereData->spheres[0].data= glm::vec4(500, 0.2, 0, 0); 
     sphereData->numSpheres += 1;
 
     sphereData->spheres[1].centerAndRadius = glm::vec4(2, 0, 4, 1);
     sphereData->spheres[1].colour = glm::vec4(0, 0, 1, 1);
-    sphereData->spheres[1].data= glm::vec4(500, 0, 0, 0);
+    sphereData->spheres[1].data= glm::vec4(500, 0.3, 0, 0);
     sphereData->numSpheres += 1;
 
     sphereData->spheres[2].centerAndRadius = glm::vec4(0, -5001, 0, 5000);
     sphereData->spheres[2].colour = glm::vec4(1, 1, 0, 1);
-    sphereData->spheres[2].data= glm::vec4(1000, 0, 0, 0);
+    sphereData->spheres[2].data= glm::vec4(1000, 0.5, 0, 0);
     sphereData->numSpheres += 1;
 
     sphereData->spheres[3].centerAndRadius = glm::vec4(-2, 0, 4, 1);
     sphereData->spheres[3].colour = glm::vec4(0, 1, 0, 1);
-    sphereData->spheres[3].data= glm::vec4(10, 0, 0, 0);
+    sphereData->spheres[3].data= glm::vec4(10, 0.4, 0, 0);
     sphereData->numSpheres += 1;
 }
 
