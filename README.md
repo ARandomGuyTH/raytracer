@@ -15,7 +15,7 @@ The rays check if they collide with a sphere and if so:
 Compile your own glfw library files (i.e - libglfw.so, libglfw.so.3, libglfw.so.3.5) and add them to the the lib directory in dependencies, then run make all
 
 ## Examples
-<img width="1900" height="1117" alt="image" src="https://github.com/user-attachments/assets/e9b8fd46-047d-4443-ac61-5f88638ef82c" />
+<img width="1280" height="720" alt="image" src="https://github.com/user-attachments/assets/c9f538d8-f89d-4d9d-9157-d3f8fc3d4c98" />
 
 
 ## To Add
