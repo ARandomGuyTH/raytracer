@@ -44,7 +44,7 @@ struct LightBlockData {
 };
 
 //camera
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(glm::vec3(0.0f, 0.0f, 0.0f));
 float lastX = aspect.width / 2.0f;
 float lastY = aspect.height / 2.0f;
 bool firstMouse = true;
@@ -70,10 +70,6 @@ void mouse_callback(GLFWwindow* window, double xposin, double yposin) {
     lastY = ypos;
 
     camera.ProcessMouseMovement(xoffset, yoffset);
-}
-
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
-    camera.ProcessMouseScroll(static_cast<float>(yoffset));
 }
 
 //resizes the viewport to the width and height
@@ -107,25 +103,42 @@ void processInput(GLFWwindow *window) {
 void updateSphereData(SphereBlockData* sphereData) {
     sphereData->numSpheres = 0;
 
-    sphereData->spheres[0].centerAndRadius = glm::vec4(0, -1, 3, 1);
-    sphereData->spheres[0].colour = glm::vec4(1, 0, 0, 1);
-    sphereData->spheres[0].data= glm::vec4(500, 0.2, 0, 0); 
+    sphereData->spheres[0].centerAndRadius = glm::vec4(2, 0, 2, 1);
+    sphereData->spheres[0].colour = glm::vec4(0.6, 0.6, 0.6, 1);
+    sphereData->spheres[0].data= glm::vec4(500, 0.65, 0, 0); 
     sphereData->numSpheres += 1;
 
-    sphereData->spheres[1].centerAndRadius = glm::vec4(2, 0, 4, 1);
+    sphereData->spheres[1].centerAndRadius = glm::vec4(0.5, 0, 3.5, 1);
     sphereData->spheres[1].colour = glm::vec4(0, 0, 1, 1);
     sphereData->spheres[1].data= glm::vec4(500, 0.3, 0, 0);
     sphereData->numSpheres += 1;
 
     sphereData->spheres[2].centerAndRadius = glm::vec4(0, -5001, 0, 5000);
-    sphereData->spheres[2].colour = glm::vec4(1, 1, 0, 1);
-    sphereData->spheres[2].data= glm::vec4(1000, 0.5, 0, 0);
+    sphereData->spheres[2].colour = glm::vec4(0.7, 0.7, 0.7, 1);
+    sphereData->spheres[2].data= glm::vec4(1000, 0.05 ,0, 0);
     sphereData->numSpheres += 1;
 
-    sphereData->spheres[3].centerAndRadius = glm::vec4(-2, 0, 4, 1);
+    sphereData->spheres[3].centerAndRadius = glm::vec4(-1, 0, 5, 1);
     sphereData->spheres[3].colour = glm::vec4(0, 1, 0, 1);
-    sphereData->spheres[3].data= glm::vec4(10, 0.4, 0, 0);
+    sphereData->spheres[3].data= glm::vec4(10, 0, 0, 0);
     sphereData->numSpheres += 1;
+
+    for (int i=4; i <= 20; i++) {
+        sphereData->spheres[i].centerAndRadius = glm::vec4(
+            glm::sin(i * 12.9898f) * 5.0f,   // pseudo-random x in front of camera
+            -0.7f,
+            2.0f + glm::cos(i * 78.233f) * 3.0f, // pseudo-random z, offset in front
+            0.3f
+        );
+        sphereData->spheres[i].colour = glm::vec4(
+            glm::fract(glm::sin(i * 12.9898f) * 43758.5453f),
+            glm::fract(glm::sin(i * 78.233f) * 43758.5453f),
+            glm::fract(glm::sin(i * 45.164f) * 43758.5453f),
+            1
+        );
+        sphereData->spheres[i].data = glm::vec4(10, 0.05, 0, 0);
+        sphereData->numSpheres += 1;
+    }
 }
 
 void updateLightData(LightBlockData* lightData) {
@@ -166,7 +179,6 @@ int main(int argc, char* argv[]) {
     
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); //lock mouse and allow for mouse movement
     glfwSetCursorPosCallback(window, mouse_callback);
-    glfwSetScrollCallback(window, scroll_callback); 
 
 	glfwSwapInterval(0);
 
@@ -203,11 +215,15 @@ int main(int argc, char* argv[]) {
 	int fCounter = 0;
 	while (!glfwWindowShouldClose(window)) {
         calculateDelta();
+        processInput(window);
 
-        //pass camera matrix into compute shader
-        glm::mat4 view = camera.GetViewMatrix();
+        //pass camera data into compute shader
+        shaders.setVec3("cameraPos", camera.Position);
 
-		// make sure writing to image has finished before read
+        glm::mat3 view = camera.getRotationMatrix();
+        shaders.setMat4("view", view);
+		
+        // make sure writing to image has finished before read
 		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
         //pass in aspect ratio

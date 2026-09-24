@@ -33,6 +33,10 @@ layout(std140, binding = 1) uniform lightBlock {
 };
 
 uniform vec2 resolution;
+uniform vec3 cameraPos;
+uniform vec3 cameraForward;
+uniform mat4 view;
+
 out vec4 FragColor;
 
 vec2 closest_intersection(Ray r, float t_min, float t_max);
@@ -160,11 +164,10 @@ vec4 trace_ray(Ray r, float t_min, float t_max, int recursionDepth) {
         vec2 closest_values = closest_intersection(r, t_min, t_max);
         float closest_t = closest_values.y;
         Sphere closest_sphere = spheres[int(closest_values.x)];
-
+    
         if (closest_t <= 0) { //if no sphere hit
             float a = 0.5 * normalize(r.dir).y + 1.0;
             vec4 background = vec4((1.0-a)*vec3(1.0, 1.0, 1.0) + a*vec3(0.5, 0.7, 1.0), 1.0); //return background colour
-            background = vec4(0,0,0,1);
             return output_colour + accCoef * background;
         }
 
@@ -188,15 +191,14 @@ vec4 trace_ray(Ray r, float t_min, float t_max, int recursionDepth) {
         accCoef *= reflectivity;
     }
     return output_colour;
-
 }
 
 void main() {
     vec2 uv = (gl_FragCoord.xy / resolution) * 2.0 - 1.0;
     uv.x *= resolution.x / resolution.y;
 
-    vec3 cameraForward = normalize(vec3(uv, 1.0)); // simple fixed-forward camera
+    vec3 rayDir = (view * normalize(vec4(uv, -1.0, 0.0))).xyz; 
 
-    Ray r = Ray(vec3(0,0,0), cameraForward);
-    FragColor = trace_ray(r, 0.001, 0xFFFF, 100);
+    Ray r = Ray(cameraPos, rayDir);
+    FragColor = trace_ray(r, 0.001, 0xFFFF, 25);
 }
