@@ -17,6 +17,7 @@ Compile your own glfw library files (i.e - libglfw.so, libglfw.so.3, libglfw.so.
 ## Examples
 <img width="1280" height="720" alt="image" src="https://github.com/user-attachments/assets/c9f538d8-f89d-4d9d-9157-d3f8fc3d4c98" />
 
+<img width="1888" height="1110" alt="image" src="https://github.com/user-attachments/assets/317d9558-36e0-4860-b3df-a78c0a560729" />
 
 ## To Add
   -Support for other shapes then spheres
